@@ -1,0 +1,303 @@
+---
+title: "COVID-19"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+COVID-19 Spread
+===================================== 
+COVID-19 Timeline Analysis done with R.
+
+
+
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(lubridate)
+library(gganimate)
+library(scales)
+library(ggrepel)
+library(maps)
+library(ggthemes)
+
+data<-read.csv("owid-covid-data.csv")
+world_country<-read.csv("world_country.csv")
+world_country<-world_country[,1:4]
+
+colnames(world_country)<-c("Country_code","Lat","Long","location")
+req_data<-semi_join(data,world_country)
+req_data<-inner_join(req_data,world_country)
+req_data$date<-ymd(req_data$date)
+```
+
+Columns {data-height=1000}
+-----------------------------------------------------------------------
+
+### How COVID-19 affected the world ?
+![](C:\\Users\\ASUS\\Desktop\\Intern\\Task-8\\TimelineAnalysis-COVID19\\worldcov.gif)
+
+Columns {data-width=900}{data-height=300}
+-----------------------------------------------------------------------
+
+### How COVID-19 affected the world ? (Faster-Version)
+```{r fig.height=10}
+```
+![](C:\\Users\\ASUS\\Desktop\\Intern\\Task-8\\TimelineAnalysis-COVID19\\world.gif)
+
+
+
+
+
+
+### Spread of COVID-19
+
+
+COVID-19 started from China and started spreading all over the world. In mere months, it was in all countires and some of the worst affected countries were **India, USA, and Brazil**. This can be seen from the growing point in the plot.
+
+
+Total Cases(Specific) {data-orientation=rows}
+===================================== 
+
+Columns {data-height=1000}{data-width=1000}
+-----------------------------------------------------------------------
+
+### Total Cases in specific countires
+```{r fig.height=10,fig.width=15}
+```
+![](C:\\Users\\ASUS\\Desktop\\Intern\\Task-8\\TimelineAnalysis-COVID19\\country_cases2.gif)
+
+
+### Countries
+
+Five countries- **USA, UK, India, China and Japan** data of total cases with dates is analysed.
+
+USA total cases just tremendously increase. India's total cases also increase but now the increase is not significant.
+UK cases rise in later months, possibly due to discovery of new strain of Coronavirus. China and Japan's total cases remain significanlty low
+
+New Cases(Specific) {data-orientation=rows}
+===================================== 
+
+Rows {data-height=200}{data-width=200}
+------------------------------------------------------------------------
+```{r fig.height=3,fig.width=5}
+```
+![](C:\\Users\\ASUS\\Desktop\\Intern\\Task-8\\TimelineAnalysis-COVID19\\newcases.gif)
+
+### Countries
+
+Five countries- **USA, UK, India, China and Japan** data of new cases with dates is analysed.
+
+USA new cases tremendously increase and in later months very large fluctuations are seen and large amount of new cases of Coronavirus rise across United States even now also.
+
+India's rise in new cases was very large around September/October of 2020 and nowadays rise in new cases is showing a decreasing trend.
+
+UK rise in new cases was not very large but in later months of December 2020 and January 2021, there is an increasing trend of new cases reported per day, possibly due to the discovery of new coronavirus strain.
+
+China's and Japan's new cases reported per day remains significantly low as compared to the other countries.
+
+ Deaths {data-orientation=row}
+===================================== 
+
+Row {data-width=400}
+-------------------------------------
+    
+### Top 10 Countries 
+    
+```{r}
+
+req_data%>% group_by(location)%>%summarise(total_death=sum(new_cases,na.rm = TRUE))%>% slice_max(total_death,n=10)%>%
+  mutate(location=reorder(location,total_death))%>%
+  ggplot()+geom_col(aes(x=location,y=total_death,fill=location))+coord_flip()+scale_y_continuous(labels = scales::comma)+
+  ylab("Total Death")+xlab("Countries")+theme_gdocs()+theme(legend.position = "none",plot.title = element_text(hjust=0.5))+
+  ggtitle("Total Deaths(Top 10 Countries)")
+```
+   
+Row
+--------------------------------------------------
+
+### Bottom 10 Countries 
+    
+```{r}
+req_data%>% group_by(location)%>%summarise(total_death=sum(new_cases,na.rm = TRUE))%>% slice_min(total_death,n=10)%>%
+  mutate(location=reorder(location,total_death))%>%
+  ggplot()+geom_col(aes(x=location,y=total_death,fill=location))+coord_flip()+scale_y_continuous(labels = scales::comma)+
+  ylab("Total Death")+xlab("Countries")+theme_gdocs()+theme(legend.position = "none",plot.title = element_text(hjust=0.5))+
+  ggtitle("Total Deaths(Bottom 10 Countries)")
+```
+
+
+
+### Total Death in Countries
+
+Top 10 Countries where most of death occured and bottom 10 countries where least death occured has been analysed.
+
+Very small countries are featured in bottom 10 and top-10 countires are those countries where there are maximum number of total cases
+
+
+ Total Cases(Date-Wise) {data-orientation=row}
+===================================== 
+
+
+Column
+-------------------------------------
+    
+### Cool Animated Bar-Plot 
+![](C:\\Users\\ASUS\\Desktop\\Intern\\Task-8\\TimelineAnalysis-COVID19\\topten.gif)
+    
+
+   
+Column {data-width=300}
+-------------------------------------
+   
+### Bottom 10 countries (Total Cases)
+
+```{r}
+req_data%>%group_by(location)%>%summarise(total_case=sum(new_cases,na.rm=TRUE))%>% slice_min(total_case,n=10)%>%
+  mutate(location=reorder(location,total_case))%>%ggplot()+geom_col(aes(x=location,y=total_case,fill=location))+
+  coord_flip()+ylab("Total Cases")+xlab("Countries")+theme_gdocs()+scale_y_continuous(labels = scales::comma)+
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5))+ggtitle("Total Cases(Bottom 10 Countries)")
+```   
+
+
+
+COVID-19(Asia) {data-orientation=row}
+===================================== 
+
+
+Column
+-------------------------------------
+    
+### Total Cases
+```{r}
+req_data%>%filter(continent=="Asia")%>%group_by(location)%>%
+  summarise(cases=sum(new_cases,na.rm=TRUE),deaths=sum(new_deaths,na.rm=TRUE))%>%slice_max(cases,n=10)%>%
+  mutate(location=reorder(location,cases))%>%
+  ggplot()+geom_col(aes(x=location,y=cases),fill="red")+
+  coord_flip()+xlab("Countries")+ylab("Cases")+ggtitle("Top 10 countires affected in Asia(Total Cases)")+
+  theme(plot.title = element_text(hjust=0.5))+scale_y_continuous(labels = scales::comma)
+```
+
+    
+
+   
+Column {data-width=300}
+-------------------------------------
+   
+### Total Deaths
+```{r}
+req_data%>%filter(continent=="Asia")%>%group_by(location)%>%
+  summarise(cases=sum(new_cases,na.rm=TRUE),deaths=sum(new_deaths,na.rm=TRUE))%>%slice_max(deaths,n=10)%>%
+  mutate(location=reorder(location,deaths))%>%
+  ggplot()+geom_col(aes(x=location,y=deaths),fill="black")+
+  coord_flip()+xlab("Countries")+ylab("Death")+ggtitle("Top 10 countires affected in Asia(Deaths)")+
+  theme(plot.title = element_text(hjust=0.5))+scale_y_continuous(labels = scales::comma)
+```
+
+
+
+### Summary
+
+COVID-19 harshly affected **Asia**
+
+It started spreading from China(Asia) and the main victim of COVID-19 seems to be **India**.
+
+
+4 Countries(Total Cases) {data-orientation=row}
+=====================================
+
+Row
+-------------------------------------
+    
+### India
+    
+```{r}
+india<-req_data%>%filter(location=="India")
+china<-req_data%>%filter(location=="China")
+usa<-req_data%>%filter(location=="United States")
+uk<-req_data%>%filter(location=="United Kingdom")
+india%>%ggplot()+geom_line(aes(x=date,y=total_cases),colour="red")+scale_y_continuous(labels=scales::comma)+
+  xlab("Date")+ylab("Total Cases")+ggtitle("Total cases with date(India)")+theme(plot.title = element_text(hjust = 0.5))
+```
+  
+### China
+
+```{r}
+china%>%ggplot()+geom_line(aes(x=date,y=total_cases),colour="red")+scale_y_continuous(labels=scales::comma)+
+  xlab("Date")+ylab("Total Cases")+ggtitle("Total cases with date(China)")+theme(plot.title = element_text(hjust = 0.5))
+```
+
+   
+Row
+-------------------------------------
+    
+### USA
+    
+```{r}
+usa%>%ggplot()+geom_line(aes(x=date,y=total_cases),colour="red")+scale_y_continuous(labels=scales::comma)+
+  xlab("Date")+ylab("Total Cases")+ggtitle("Total cases with date(USA)")+theme(plot.title = element_text(hjust = 0.5))
+```
+    
+### UK
+
+```{r}
+uk%>%ggplot()+geom_line(aes(x=date,y=total_cases),colour="red")+scale_y_continuous(labels=scales::comma)+
+  xlab("Date")+ylab("Total Cases")+ggtitle("Total cases with date(UK)")+theme(plot.title = element_text(hjust = 0.5))
+```
+
+4 Countries(New Cases and Death) {data-orientation=row}
+=====================================
+
+Row
+-------------------------------------
+    
+### India
+    
+![](C:\\Users\\ASUS\\Desktop\\Intern\\Task-8\\TimelineAnalysis-COVID19\\ind.gif)
+
+  
+### China
+
+
+![](C:\\Users\\ASUS\\Desktop\\Intern\\Task-8\\TimelineAnalysis-COVID19\\chi.gif)
+
+
+   
+Row
+-------------------------------------
+    
+### USA
+    
+![](C:\\Users\\ASUS\\Desktop\\Intern\\Task-8\\TimelineAnalysis-COVID19\\us.gif)
+
+    
+### UK
+
+![](C:\\Users\\ASUS\\Desktop\\Intern\\Task-8\\TimelineAnalysis-COVID19\\u.gif)
+
+Conclusion 
+=======================================
+
+- **India, USA and Brazil** seems to be worst affected countries.
+
+- In **Asia**, **India** is the major victim of COVID-19.
+
+- **UK** saw an increasing trend in new cases during January 2021, it might be due to the new strain of coronavirus
+
+- COVID-19 started from **China**, but they controlled the spread early.
+
+- **India** is now seeing a decreasing trend in new cases, COVID-19 is getting in control in India.
+
+- **USA** is still now seeing an increasing trend in new cases. Some measures should be taken there.
+
+Data Source:
+  
+  https://ourworldindata.org/coronavirus-source-data
+
+
+  https://www.kaggle.com/paultimothymooney/latitude-and-longitude-for-every-country-and-state
+
+
+
